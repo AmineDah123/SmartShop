@@ -1,16 +1,66 @@
 <?php
 include("connection.php");
+session_start();
 
-
-if ($_SERVER['REQUEST_METHOD'] == 'POST')
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['sign_up']))
 {
-    if ($_POST['email'] && $_POST['password'])
+    if (!empty($_POST['email']) && !empty($_POST['password']))
     {
-        
+        $email = $_POST["email"];
+        $password = $_POST["password"];
+        $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
+        $idcom = connexpdo('Smartshop');
+        if ($idcom)
+        {
+            try{
+                $req = "INSERT INTO users(email,password) VALUES (:email,:password)";
+                $stmt = $idcom->prepare($req);
+                $response = $stmt->execute([
+                    ':email' => $email,
+                    ':password' => $hashedPassword
+                ]);
+
+                if ($response)
+                {
+                    $_SESSION["email"] = $email;
+                    header("Location: index.php");
+                    exit;
+                }
+            }
+            catch (PDOException $e)
+            {
+                if ($e->getCode() == 23000)
+                {
+                    $_SESSION['error'] = "Email already exists. Try another one";
+                    header("Location: " . $_SERVER['PHP_SELF']);
+                    exit;
+                }
+                else
+                {
+                    $_SESSION['error'] = "Database error: " . $e->getMessage();
+                    header("Location: " . $_SERVER['PHP_SELF']);
+                    exit;
+                }
+
+            }
+        }
+        else
+        {
+            $_SESSION['error'] = "Fatal Error In Database! Contact Support Immediately!";
+            header("Location: " . $_SERVER['PHP_SELF']);
+            exit;
+        }
+        
     }
 
 
+}
+
+$errorMessage = '';
+if (isset($_SESSION['error'])) {
+    $errorMessage = $_SESSION['error'];
+    unset($_SESSION['error']); 
 }
 
 
@@ -35,6 +85,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST')
             
             <h3 class="text-center mb-4">Sign Up</h3>
 
+            <?php if ($errorMessage): ?>
+                <div class="alert alert-danger" role="alert">
+                    <?php echo htmlspecialchars($errorMessage); ?>
+                </div>
+            <?php endif; ?>
+
             <form method="POST">
                 <div class="mb-3">
                     <label class="form-label">Email</label>
@@ -43,10 +99,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST')
 
                 <div class="mb-3">
                     <label class="form-label">Password</label>
-                    <input type="password" name="password" class="form-control" placeholder="Enter your password" required>
+                    <input type="password" name="password" class="form-control" placeholder="Enter your password"  required>
                 </div>
 
-                <button type="submit" class="btn btn-primary w-100">Sign Up</button>
+                <button type="submit" class="btn btn-primary w-100" name="sign_up" >Sign Up</button>
 
                 <p class="text-center mt-3">
                     Already Signed Up? 
