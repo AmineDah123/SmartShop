@@ -29,8 +29,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['sign_up']))
                         header("Location: index.php");
                         exit;
                     }
-
-                    header("Location: index.php");
+                    else
+                    {
+                        $_SESSION['error'] = 'Incorrect Password!';
+                        header("Location: " . $_SERVER['PHP_SELF']);
+                        exit;
+                    }
+                }
+                else
+                {
+                    $_SESSION['error'] = 'There is no such email!';
+                    header("Location: " . $_SERVER['PHP_SELF']);
                     exit;
                 }
             }
